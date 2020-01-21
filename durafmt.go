@@ -3,8 +3,6 @@ package durafmt
 
 import (
 	"errors"
-	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +10,9 @@ import (
 
 var (
 	units      = []string{"years", "weeks", "days", "hours", "minutes", "seconds", "milliseconds", "microseconds"}
+	units1     = []string{"год", "неделю", "день", "час", "минуту", "секунду", "миллисекунду", "микросекунду"}
+	units2     = []string{"года", "недели", "дня", "часа", "минуты", "секунды", "миллисекунды", "микросекунды"}
+	units5     = []string{"лет", "недель", "дней", "часов", "минут", "секунд", "миллисекунд", "микросекунд"}
 	unitsShort = []string{"y", "w", "d", "h", "m", "s", "ms", "µs"}
 )
 
@@ -114,31 +115,18 @@ func (d *Durafmt) String() string {
 	}
 
 	// Construct duration string.
-	for i := range units {
+	for i := range units1 {
 		u := units[i]
 		v := durationMap[u]
 		strval := strconv.FormatInt(v, 10)
-		switch {
-		// add to the duration string if v > 1.
-		case v > 1:
-			duration += strval + " " + u + " "
-		// remove the plural 's', if v is 1.
-		case v == 1:
-			duration += strval + " " + strings.TrimRight(u, "s") + " "
-		// omit any value with 0s or 0.
-		case d.duration.String() == "0" || d.duration.String() == "0s":
-			pattern := fmt.Sprintf("^-?0%s$", unitsShort[i])
-			isMatch, err := regexp.MatchString(pattern, d.input)
-			if err != nil {
-				return ""
-			}
-			if isMatch {
-				duration += strval + " " + u
-			}
-
-		// omit any value with 0.
-		case v == 0:
+		if v%10 == 1 && (v/10)%10 != 1 {
+			duration += strval + " " + units1[i] + " "
+		} else if v%10 >= 2 && v%10 <= 4 && (v/10)%10 != 1 {
+			duration += strval + " " + units2[i] + " "
+		} else if v == 0 {
 			continue
+		} else {
+			duration += strval + " " + units5[i] + " "
 		}
 	}
 	// trim any remaining spaces.
